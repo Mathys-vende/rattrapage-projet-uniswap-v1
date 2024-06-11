@@ -1,0 +1,23 @@
+stages:
+  - qa
+
+test-pytest:
+  image: python:3.12
+  stage: qa
+  script:
+    - python, -m venv .venv
+    - source .venv/bin/activate
+    - python -m pip install -r requirements.txt
+    - python -m pytest --version
+    - python -m pytest
+
+test-foundry:
+  image: ghcr.io/foundry-rs/foundry:latest
+  stage: qa
+  script:
+    - forge --version
+    - forge test
+  cache:
+    paths:
+      - cache
+      - out
