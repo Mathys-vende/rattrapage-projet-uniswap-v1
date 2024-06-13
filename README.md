@@ -212,7 +212,7 @@ Le flow de développement à suivre est le suivant:
 
 ```bash
 # Recup les tests de la partie 1
-git merge part-1 -m "Merge tests part 1"
+git merge origin/part-1 -m "Merge tests part 1"
 
 # Implémenter la partie 1, tester et débugguer avec:
 forge test -vvv
@@ -222,7 +222,7 @@ git add src/*.sol
 git commit -m "Implement part 1"
 
 # Recup les tests de la partie 2
-git merge part-2 -m "Merge tests part 2"
+git merge origin/part-2 -m "Merge tests part 2"
 
 # Implémenter la partie 2, tester et débugguer avec:
 forge test -vvv
@@ -232,7 +232,7 @@ git add src/*.sol
 git commit -m "Implement part 2"
 
 # Recup les tests de la partie 3
-git merge part-3 -m "Merge tests part 3"
+git merge origin/part-3 -m "Merge tests part 3"
 
 # Implémenter la partie 3, tester et débugguer avec:
 forge test -vvv
