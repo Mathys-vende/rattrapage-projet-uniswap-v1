@@ -190,7 +190,7 @@ Après implémentation, bien re-vérifier que tous les tests passent, faire un c
 
 ```bash
 python -m pytest # Doit passer !
-git add test/pool.y
+git add test/pool.py
 git commit -m "Implement python part"
 ```
 
