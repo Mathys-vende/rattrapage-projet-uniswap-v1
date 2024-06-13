@@ -3,6 +3,7 @@ pragma solidity ^0.8;
 
 import {Test, console} from "forge-std/Test.sol";
 import {Exchange} from "src/Exchange.sol";
+import {Factory} from "src/Factory.sol";
 import {Token} from "src/Token.sol";
 import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
@@ -31,6 +32,7 @@ contract Test_Exchange_Deployment is Test_Exchange {
         assertEq(exchange.symbol(), "ZUNI-V1");
         assertEq(exchange.totalSupply(), 0);
         assertEq(exchange.tokenAddress(), address(token));
+        assertEq(exchange.factoryAddress(), owner);
     }
 }
 
@@ -191,6 +193,30 @@ contract Test_Exchange_GetEtherAmount is Test_Exchange {
     }
 }
 
+contract Test_Exchange_EthToTokenTransfer is Test_Exchange {
+    function setUp() public override {
+        super.setUp();
+        token.approve(address(exchange), 2000 ether);
+        exchange.addLiquidity{value: 1000 ether}(2000 ether);
+    }
+
+    function test_ItTransfersAtLeastMinAmountOfTokens() public {
+        address user2 = address(0x1234);
+
+        uint256 userBalanceBefore = user.balance;
+
+        vm.prank(user);
+        exchange.ethToTokenTransfer{value: 1 ether}(1.97 ether, user2);
+
+        uint256 userBalanceAfter = user.balance;
+
+        assertEq(userBalanceBefore - userBalanceAfter, 1 ether);
+        assertEq(token.balanceOf(user2), 1.978041738678708079 ether);
+        assertEq(address(exchange).balance, 1001 ether);
+        assertEq(token.balanceOf(address(exchange)), 1998.021958261321291921 ether);
+    }
+}
+
 contract Test_Exchange_EthToTokenSwap is Test_Exchange {
     function setUp() public override {
         super.setUp();
@@ -285,5 +311,48 @@ contract Test_Exchange_TokenToEthSwap is Test_Exchange {
         assertEq(token.balanceOf(user), 22 ether);
         assertEq(address(exchange).balance, 1000 ether);
         assertEq(token.balanceOf(address(exchange)), 2000 ether);
+    }
+}
+
+contract Test_Exchange_TokenToTokenSwap is Test {
+    address owner = address(this);
+    address user = address(0xc2ba);
+
+    function test_ItSwapsTokenForToken() public {
+        deal(user, 1_000_000 ether);
+
+        Factory factory = new Factory();
+        Token token = new Token("TokenA", "AAA", 1_000_000 ether);
+
+        vm.prank(user);
+        Token token2 = new Token("TokenB", "BBBB", 1_000_000 ether);
+
+        Exchange exchange = Exchange(factory.createExchange(address(token)));
+
+        vm.prank(user);
+        Exchange exchange2 = Exchange(factory.createExchange(address(token2)));
+
+        token.approve(address(exchange), 2_000 ether);
+        exchange.addLiquidity{value: 1_000 ether}(2_000 ether);
+
+        vm.startPrank(user);
+        token2.approve(address(exchange2), 1_000 ether);
+        exchange2.addLiquidity{value: 1_000 ether}(1_000 ether);
+        vm.stopPrank();
+
+        assertEq(token2.balanceOf(owner), 0);
+
+        token.approve(address(exchange), 10 ether);
+        exchange.tokenToTokenSwap(10 ether, 4.8 ether, address(token2));
+        assertEq(token2.balanceOf(owner), 4.852698493489877956 ether);
+
+        assertEq(token.balanceOf(user), 0);
+
+        vm.startPrank(user);
+        token2.approve(address(exchange2), 10 ether);
+        exchange2.tokenToTokenSwap(10 ether, 19.6 ether, address(token));
+        vm.stopPrank();
+
+        assertEq(token.balanceOf(user), 19.602080509528011079 ether);
     }
 }
